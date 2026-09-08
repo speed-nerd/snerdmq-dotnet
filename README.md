@@ -1,6 +1,6 @@
 <div align="center">
   <img src="https://raw.githubusercontent.com/speed-nerd/snerdmq/main/assets/snerdmq-transparent.png" width="200" alt="SnerdMQ Logo"/>
-  <h1>SnerdMQ .NET SDK (v0.3.4)</h1>
+  <h1>SnerdMQ .NET SDK (v0.3.5)</h1>
 
   [![Docs](https://img.shields.io/badge/docs-speed--nerd.github.io-blue)](https://speed-nerd.github.io/docs/)
 </div>
@@ -12,13 +12,13 @@
 - **ASP.NET Core Friendly**: Never blocks the main event loop.
 - **Bulletproof Durability**: Uses OS-level file locking for ACID compliance.
 
-## ✨ v0.3.4 AI Features
+## ✨ v0.3.5 AI Features
 - **Smart API Rate-Limiting**: Natively tracks `rateLimitGroup` execution velocity to prevent 429 "Too Many Requests" API errors.
 - **Payload-Hashing Deduplication**: Automatically computes cryptographic hashes to drop duplicate tasks instantly.
 - **Dynamic Float Prioritization**: A native Binary Max-Heap bypasses standard FIFO rules for high urgency tasks.
 - **Progress Streaming & Live Dashboard**: Handlers can stream progress updates to a built-in React UI dashboard served by the SDK.
 
-### ⚙️ Advanced Task Configuration (v0.3.4)
+### ⚙️ Advanced Task Configuration (v0.3.5)
 To power complex AI workflows, tasks can now be configured with advanced orchestration parameters:
 
 * **`autoDedupe` (`bool`)**: If set to `true`, the daemon computes a cryptographic hash of the `taskType` and `data`. If an identical payload is currently sitting in the queue pending execution, this new task is silently dropped. Excellent for preventing duplicate generative AI requests from trigger-happy users!
@@ -247,3 +247,52 @@ using var queue = new SnerdQueue(null, "/var/data/snerd"); // per-server storage
 A shared network drive (AWS EFS or NFS) is still a good home for that storage when a single instance needs durable state — e.g. a container that restarts but must keep its queue. Native OS file locking (`flock`) keeps writes safe — no Redis required.
 
 *Built with ❤️ for John Wick tier engineering.*
+
+
+## Architecture Best Practices
+
+When building production applications with SnerdMQ, it is recommended to initialize the queue as a Singleton, isolate your domain workers into separate files/functions, use Dead Letter Queues (DLQ) for failed tasks via `RegisterMaxRetryHandler`, and ensure manual graceful shutdown. The embedded Dashboard UI can also be easily served from the same instance.
+
+```csharp
+using System;
+using System.Threading.Tasks;
+using SnerdMQ;
+
+class Program
+{
+    static async Task Main(string[] args)
+    {
+        var queue = new SnerdQueue(storagePath: "./.snerdata");
+
+        // Email Workers
+        queue.RegisterHandler("send_email", async (data) =>
+        {
+            var email = (string)data["email"];
+            Console.WriteLine($"Sending email to {email}...");
+        });
+
+        queue.RegisterMaxRetryHandler("send_email", async (data) =>
+        {
+            var email = (string)data["email"];
+            Console.WriteLine($"Email to {email} failed permanently. Dead letter processing...");
+        });
+
+        // Image Workers
+        queue.RegisterHandler("process_image", async (data) =>
+        {
+            Console.WriteLine($"Processing image {(string)data["imageId"]}...");
+        });
+
+        queue.StartDashboard(8080);
+
+        // Graceful shutdown
+        Console.CancelKeyPress += (s, e) =>
+        {
+            e.Cancel = true;
+            queue.Shutdown();
+        };
+
+        await queue.StartListening();
+    }
+}
+```
