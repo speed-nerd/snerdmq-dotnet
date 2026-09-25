@@ -25,10 +25,15 @@ namespace SnerdMQ
         private readonly ConcurrentDictionary<System.Net.WebSockets.WebSocket, byte> _wsClients = new ConcurrentDictionary<System.Net.WebSockets.WebSocket, byte>();
 
 
-        public SnerdQueue(string binaryPath = null, string storagePath = null)
+        private readonly int? _maxLocalShards;
+        private readonly int? _maxWorkers;
+
+        public SnerdQueue(string binaryPath = null, string storagePath = null, int? maxLocalShards = null, int? maxWorkers = null)
         {
             _binaryPath = binaryPath ?? SnerdmqInstaller.EnsureDownloadedAsync().GetAwaiter().GetResult();
             _storagePath = storagePath;
+            _maxLocalShards = maxLocalShards;
+            _maxWorkers = maxWorkers;
 
             if (string.IsNullOrEmpty(_binaryPath))
             {
@@ -85,6 +90,15 @@ namespace SnerdMQ
                 psi.Arguments = $"\"{_storagePath}\"";
             }
 
+            if (_maxLocalShards.HasValue)
+            {
+                psi.EnvironmentVariables["SNERD_MAX_SHARDS"] = _maxLocalShards.Value.ToString();
+            }
+            if (_maxWorkers.HasValue)
+            {
+                psi.EnvironmentVariables["SNERD_MAX_WORKERS"] = _maxWorkers.Value.ToString();
+            }
+
             _process = new Process { StartInfo = psi };
             _process.Start();
 
@@ -114,7 +128,7 @@ namespace SnerdMQ
             return Enqueue(taskId, taskType, jsonData, maxRetries, retryAfterHours, rateLimitGroup, maxPerMinute, autoDedupe, null, null, null, null);
         }
 
-        public Task Enqueue(string taskId, string taskType, string jsonData, int maxRetries, double retryAfterHours, string rateLimitGroup, int? maxPerMinute, bool? autoDedupe, double? urgencyScore, DateTime? executeAt = null, string cron = null, string webhookUrl = null, int? maxExecutionSeconds = null)
+        public Task Enqueue(string taskId, string taskType, string jsonData, int maxRetries, double retryAfterHours, string rateLimitGroup, int? maxPerMinute, bool? autoDedupe, double? urgencyScore, DateTime? executeAt = null, string cron = null, string webhookUrl = null, int? maxExecutionSeconds = null, System.Collections.Generic.List<string> triggerAfterIds = null, string pool = null)
         {
             if (_process == null || _process.HasExited)
             {
@@ -161,6 +175,16 @@ namespace SnerdMQ
             if (maxExecutionSeconds.HasValue)
             {
                 sb.Append($",\"max_execution_seconds\":{maxExecutionSeconds.Value}");
+            }
+            if (triggerAfterIds != null && triggerAfterIds.Count > 0)
+            {
+                sb.Append(",\"trigger_after_ids\":[");
+                sb.Append(string.Join(",", triggerAfterIds.ConvertAll(id => $"\"{id}\"")));
+                sb.Append("]");
+            }
+            if (!string.IsNullOrEmpty(pool))
+            {
+                sb.Append($",\"pool\":\"{pool}\"");
             }
             sb.Append("}");
             
