@@ -1,6 +1,6 @@
 <div align="center">
   <img src="https://raw.githubusercontent.com/speed-nerd/snerdmq/main/assets/snerdmq-transparent.png" width="200" alt="SnerdMQ Logo"/>
-  <h1>SnerdMQ .NET SDK (v0.4.0)</h1>
+  <h1>SnerdMQ .NET SDK (v0.4.1)</h1>
 
   [![Docs](https://img.shields.io/badge/docs-speed--nerd.github.io-blue)](https://speed-nerd.github.io/docs/sdks/dotnet/)
 </div>
@@ -14,7 +14,7 @@
 
 > 📚 **Full Documentation & Advanced Features:** Check out the [official C# / .NET SDK documentation](https://speed-nerd.github.io/docs/sdks/dotnet/) on our docs site!
 
-## ✨ v0.4.0 AI Features
+## ✨ v0.4.1 AI Features
 - **Worker Pools**: Prevent slow generative AI tasks from starving fast DB tasks by dedicating threads to specific pools (e.g. `"urgent"`).
 - **Sharded Queues**: Distribute load across multiple queue nodes safely using file-backed lock sharding (`MaxLocalShards`).
 - **Smart API Rate-Limiting**: Natively tracks `rateLimitGroup` execution velocity to prevent 429 "Too Many Requests" API errors.
@@ -23,7 +23,7 @@
 - **Job Chaining (DAGs)**: Define complex workflow dependencies natively. Tasks wait in a blocked state until their parent tasks succeed.
 - **Progress Streaming & Live Dashboard**: Handlers can stream progress updates to a built-in React UI dashboard served by the SDK.
 
-### ⚙️ Advanced Task Configuration (v0.4.0)
+### ⚙️ Advanced Task Configuration (v0.4.1)
 To power complex AI workflows, tasks can now be configured with advanced orchestration parameters:
 
 * **`autoDedupe` (`bool`)**: If set to `true`, the daemon computes a cryptographic hash of the `taskType` and `data`. If an identical payload is currently sitting in the queue pending execution, this new task is silently dropped. Excellent for preventing duplicate generative AI requests from trigger-happy users!
