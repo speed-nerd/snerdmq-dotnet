@@ -275,7 +275,12 @@ Simply pass an array of parent task IDs to the `trigger_after_ids` parameter whe
 
 ### 🍕 Sharded Queues (Scaling Out)
 
-SnerdMQ natively supports distributed execution across multiple servers while acting as a single logical queue. Just mount a shared storage drive (like AWS EFS) and boot multiple daemons. They will automatically lock and negotiate ownership of shards. No config required in the SDK!
+SnerdMQ natively supports distributed execution across multiple servers while acting as a single logical queue. Just mount a shared storage drive (like AWS EFS) and boot multiple daemons. They will automatically lock and negotiate ownership of shards. No config required in the SDK for enqueueing! Just tell the daemon how many shards to claim on boot:
+
+```csharp
+// Boot a multi-tenant daemon that owns up to 4 shards locally
+using var queue = new SnerdQueue(maxLocalShards: 4);
+```
 
 ```csharp
 // 1. Worker Pools: Route tasks to the 'urgent' pool
