@@ -2,7 +2,7 @@
   <img src="https://raw.githubusercontent.com/speed-nerd/snerdmq/main/assets/snerdmq-transparent.png" width="200" alt="SnerdMQ Logo"/>
   <h1>SnerdMQ .NET SDK (v0.4.0)</h1>
 
-  [![Docs](https://img.shields.io/badge/docs-speed--nerd.github.io-blue)](https://speed-nerd.github.io/docs/)
+  [![Docs](https://img.shields.io/badge/docs-speed--nerd.github.io-blue)](https://speed-nerd.github.io/docs/sdks/dotnet/)
 </div>
 
 
@@ -11,6 +11,8 @@
 - **Native Task Parallelism**: Leverages C#'s massive `async`/`Task` ThreadPool.
 - **ASP.NET Core Friendly**: Never blocks the main event loop.
 - **Bulletproof Durability**: Uses OS-level file locking for ACID compliance.
+
+> 📚 **Full Documentation & Advanced Features:** Check out the [official C# / .NET SDK documentation](https://speed-nerd.github.io/docs/sdks/dotnet/) on our docs site!
 
 ## ✨ v0.4.0 AI Features
 - **Worker Pools**: Prevent slow generative AI tasks from starving fast DB tasks by dedicating threads to specific pools (e.g. `"urgent"`).
