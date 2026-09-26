@@ -296,6 +296,39 @@ queue.Enqueue(
 ```
 
 
+### 🕒 Cron & Scheduled Jobs
+```csharp
+// Run every day at 08:00
+queue.Enqueue(
+    taskId: "daily-digest", 
+    taskType: "send_email", 
+    data: new { template = "daily" },
+    cron: "0 8 * * *"
+);
+```
+
+### 🛑 Hard Timeouts
+```csharp
+// Forcefully kill if running > 5 mins
+queue.Enqueue(
+    taskId: "risky-task", 
+    taskType: "process_data", 
+    data: new { },
+    maxExecutionSeconds: 300
+);
+```
+
+### 🌐 Webhook Callbacks
+```csharp
+// Execute via HTTP instead of local handlers
+queue.Enqueue(
+    taskId: "serverless-task", 
+    taskType: "resize_image", 
+    data: new { img = "cat.jpg" },
+    webhookUrl: "https://api.example.com/webhooks/snerdmq"
+);
+```
+
 *Built with ❤️ for John Wick tier engineering.*
 
 
