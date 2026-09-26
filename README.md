@@ -265,8 +265,7 @@ A shared network drive (AWS EFS or NFS) is still a good home for that storage wh
 
 SnerdMQ supports dedicating worker resources to specific tasks so that slow AI generation tasks don't starve fast database updates.
 
-In the SDK, simply assign a pool name when enqueueing the task using the `pool` parameter. When running the daemon, you can allocate concurrent workers per pool using the environment variable:
-`SNERD_POOLS="default:100,urgent:50"`
+In the SDK, simply assign a pool name when enqueueing the task using the `pool` parameter. When running the daemon, you can allocate concurrent workers per pool using the environment variable `SNERD_POOLS="default:100,urgent:50"`.
 
 ### 🔗 Job Chaining (DAGs)
 
@@ -277,6 +276,24 @@ Simply pass an array of parent task IDs to the `trigger_after_ids` parameter whe
 ### 🍕 Sharded Queues (Scaling Out)
 
 SnerdMQ natively supports distributed execution across multiple servers while acting as a single logical queue. Just mount a shared storage drive (like AWS EFS) and boot multiple daemons. They will automatically lock and negotiate ownership of shards. No config required in the SDK!
+
+```csharp
+// 1. Worker Pools: Route tasks to the 'urgent' pool
+queue.Enqueue(
+    taskId: "payment-job", 
+    taskType: "process_payment", 
+    data: new { amount = 100 },
+    pool: "urgent"
+);
+
+// 2. Job Chaining: Block execution until parents succeed
+queue.Enqueue(
+    taskId: "final-job", 
+    taskType: "send_report", 
+    data: new { id = 1 },
+    triggerAfterIds: new List<string> { "parent-job-1", "parent-job-2" }
+);
+```
 
 
 *Built with ❤️ for John Wick tier engineering.*
