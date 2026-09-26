@@ -1,6 +1,6 @@
 <div align="center">
   <img src="https://raw.githubusercontent.com/speed-nerd/snerdmq/main/assets/snerdmq-transparent.png" width="200" alt="SnerdMQ Logo"/>
-  <h1>SnerdMQ .NET SDK (v0.3.5)</h1>
+  <h1>SnerdMQ .NET SDK (v0.4.0)</h1>
 
   [![Docs](https://img.shields.io/badge/docs-speed--nerd.github.io-blue)](https://speed-nerd.github.io/docs/)
 </div>
@@ -12,14 +12,16 @@
 - **ASP.NET Core Friendly**: Never blocks the main event loop.
 - **Bulletproof Durability**: Uses OS-level file locking for ACID compliance.
 
-## ✨ v0.3.5 AI Features
+## ✨ v0.4.0 AI Features
+- **Worker Pools**: Prevent slow generative AI tasks from starving fast DB tasks by dedicating threads to specific pools (e.g. `"urgent"`).
+- **Sharded Queues**: Distribute load across multiple queue nodes safely using file-backed lock sharding (`MaxLocalShards`).
 - **Smart API Rate-Limiting**: Natively tracks `rateLimitGroup` execution velocity to prevent 429 "Too Many Requests" API errors.
 - **Payload-Hashing Deduplication**: Automatically computes cryptographic hashes to drop duplicate tasks instantly.
 - **Dynamic Float Prioritization**: A native Binary Max-Heap bypasses standard FIFO rules for high urgency tasks.
 - **Job Chaining (DAGs)**: Define complex workflow dependencies natively. Tasks wait in a blocked state until their parent tasks succeed.
 - **Progress Streaming & Live Dashboard**: Handlers can stream progress updates to a built-in React UI dashboard served by the SDK.
 
-### ⚙️ Advanced Task Configuration (v0.3.5)
+### ⚙️ Advanced Task Configuration (v0.4.0)
 To power complex AI workflows, tasks can now be configured with advanced orchestration parameters:
 
 * **`autoDedupe` (`bool`)**: If set to `true`, the daemon computes a cryptographic hash of the `taskType` and `data`. If an identical payload is currently sitting in the queue pending execution, this new task is silently dropped. Excellent for preventing duplicate generative AI requests from trigger-happy users!
@@ -32,6 +34,7 @@ To power complex AI workflows, tasks can now be configured with advanced orchest
 * **`webhookUrl` (`string`)**: By providing a webhook URL, SnerdMQ will completely bypass your local .NET handlers and dispatch the task payload via an HTTP POST request directly to the specified URL.
 * **`maxExecutionSeconds` (`int?`)**: Optional hard timeout in seconds. If execution takes longer, it's marked as failed.
 * **`triggerAfterIds` (`List<string>`)**: A list of parent task IDs that must complete successfully before this task is allowed to dispatch. Enables complex DAG workflows natively within the queue.
+* **`pool` (`string`)**: Dedicate this task to a specific worker pool (e.g. `"urgent"`). Initialize pool sizes via `MaxWorkers` in the constructor.
 
 ### Note on Hard Timeouts (`maxExecutionSeconds`)
 When `maxExecutionSeconds` is provided, the .NET SDK wraps the execution of your handler using `Task.WhenAny` with `Task.Delay`. If the task takes longer than the timeout, the SDK will mark it as failed and abandon the handler. The background Rust daemon also enforces this timeout at the IPC level.
@@ -101,7 +104,9 @@ class Program
             executeAt: null,
             cron: "0 8 * * *",         // Run every day at 08:00
             webhookUrl: "https://api.example.com/webhook", // Execute via HTTP instead of local handlers
-            maxExecutionSeconds: 300   // Hard timeout
+            maxExecutionSeconds: 300,  // Hard timeout
+            triggerAfterIds: new List<string> { "parent-123" }, // Wait for parent tasks
+            pool: "urgent"             // Dedicate to a specific worker pool
         );
 
         // Prevent console app from exiting
@@ -221,7 +226,10 @@ using var second = new SnerdQueue(); // ❌ daemon refuses to start:
 // "Another daemon is already running on storage '.snerdata'"
 ```
 
-This applies across processes too — in a multi-worker deployment, each worker must either use its own storage directory or talk to a single shared daemon.
+This applies across processes too — in a multi-worker deployment, each worker must either use its own storage directory or talk to a single shared daemon. To safely scale on the same disk without double-executing jobs, initialize with `MaxLocalShards`:
+```csharp
+using var queue = new SnerdQueue(maxLocalShards: 4, maxWorkers: new Dictionary<string, int> { ["urgent"] = 5 });
+```
 
 ### 🔀 Need multiple queues? Give each one its own storage
 

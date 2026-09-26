@@ -7,7 +7,7 @@
     
     <!-- NuGet Publishing Meta -->
     <PackageId>SnerdMQ</PackageId>
-    <Version>0.3.5</Version>
+    <Version>0.4.0</Version>
     <Authors>Greyhands2</Authors>
     <Company>Greyhands2</Company>
     <Description>A zero-config, C-speed background job queue for the .NET ecosystem. Ditch Redis for an embedded Rust daemon.</Description>
