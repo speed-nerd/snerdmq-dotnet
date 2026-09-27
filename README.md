@@ -277,63 +277,38 @@ Simply pass an array of parent task IDs to the `trigger_after_ids` parameter whe
 
 ### 🍕 Sharded Queues (Scaling Out)
 
-SnerdMQ natively supports distributed execution across multiple servers while acting as a single logical queue. Just mount a shared storage drive (like AWS EFS) and boot multiple daemons. They will automatically lock and negotiate ownership of shards. No config required in the SDK for enqueueing! Just tell the daemon how many shards to claim on boot:
-
-```csharp
-// Boot a multi-tenant daemon that owns up to 4 shards locally
-using var queue = new SnerdQueue(maxLocalShards: 4);
-```
+SnerdMQ natively supports distributed execution across multiple servers while acting as a single logical queue. Just mount a shared storage drive (like AWS EFS) and boot multiple daemons. They will automatically lock and negotiate ownership of shards. No config required in the SDK for enqueueing! Just tell the daemon how many shards to claim on boot.
 
 ```csharp
 // 1. Worker Pools: Route tasks to the 'urgent' pool
-queue.Enqueue(
-    taskId: "payment-job", 
-    taskType: "process_payment", 
-    data: new { amount = 100 },
-    pool: "urgent"
+await queue.Enqueue(
+    "payment-job", "process_payment", "{\"amount\":100}",
+    3, 0.0, null, null, null, null, null, null, null, null, "urgent", null
 );
 
 // 2. Job Chaining: Block execution until parents succeed
-queue.Enqueue(
-    taskId: "final-job", 
-    taskType: "send_report", 
-    data: new { id = 1 },
-    triggerAfterIds: new List<string> { "parent-job-1", "parent-job-2" }
+await queue.Enqueue(
+    "final-job", "send_report", "{\"id\":1}",
+    3, 0.0, null, null, null, null, null, null, null, null, null, new List<string> { "parent-job-1", "parent-job-2" }
 );
 ```
-
 
 ### 🕒 Cron & Scheduled Jobs
 ```csharp
 // Run every day at 08:00
-queue.Enqueue(
-    taskId: "daily-digest", 
-    taskType: "send_email", 
-    data: new { template = "daily" },
-    cron: "0 8 * * *"
-);
+await queue.Enqueue("daily-digest", "send_email", "{\"template\":\"daily\"}", 3, 0.0, null, null, null, null, null, "0 8 * * *", null, null, null, null);
 ```
 
 ### 🛑 Hard Timeouts
 ```csharp
 // Forcefully kill if running > 5 mins
-queue.Enqueue(
-    taskId: "risky-task", 
-    taskType: "process_data", 
-    data: new { },
-    maxExecutionSeconds: 300
-);
+await queue.Enqueue("risky-task", "process_data", "{}", 3, 0.0, null, null, null, null, null, null, null, 300, null, null);
 ```
 
 ### 🌐 Webhook Callbacks
 ```csharp
 // Execute via HTTP instead of local handlers
-queue.Enqueue(
-    taskId: "serverless-task", 
-    taskType: "resize_image", 
-    data: new { img = "cat.jpg" },
-    webhookUrl: "https://api.example.com/webhooks/snerdmq"
-);
+await queue.Enqueue("serverless-task", "resize_image", "{\"img\":\"cat.jpg\"}", 3, 0.0, null, null, null, null, null, null, "https://api.example.com/webhooks/snerdmq", null, null, null);
 ```
 
 *Built with ❤️ for John Wick tier engineering.*
