@@ -282,33 +282,82 @@ SnerdMQ natively supports distributed execution across multiple servers while ac
 ```csharp
 // 1. Worker Pools: Route tasks to the 'urgent' pool
 await queue.Enqueue(
-    "payment-job", "process_payment", "{\"amount\":100}",
-    3, 0.0, null, null, null, null, null, null, null, null, "urgent", null
+    taskId: "payment-job", 
+    taskType: "process_payment", 
+    jsonData: "{\"amount\":100}",
+    maxRetries: 3, 
+    retryAfterHours: 0.0, 
+    rateLimitGroup: null, 
+    maxPerMinute: null, 
+    autoDedupe: null, 
+    urgencyScore: null,
+    pool: "urgent"
 );
 
 // 2. Job Chaining: Block execution until parents succeed
 await queue.Enqueue(
-    "final-job", "send_report", "{\"id\":1}",
-    3, 0.0, null, null, null, null, null, null, null, null, null, new List<string> { "parent-job-1", "parent-job-2" }
+    taskId: "final-job", 
+    taskType: "send_report", 
+    jsonData: "{\"id\":1}",
+    maxRetries: 3, 
+    retryAfterHours: 0.0, 
+    rateLimitGroup: null, 
+    maxPerMinute: null, 
+    autoDedupe: null, 
+    urgencyScore: null,
+    triggerAfterIds: new List<string> { "parent-job-1", "parent-job-2" }
 );
 ```
 
 ### 🕒 Cron & Scheduled Jobs
 ```csharp
 // Run every day at 08:00
-await queue.Enqueue("daily-digest", "send_email", "{\"template\":\"daily\"}", 3, 0.0, null, null, null, null, null, "0 8 * * *", null, null, null, null);
+await queue.Enqueue(
+    taskId: "daily-digest", 
+    taskType: "send_email", 
+    jsonData: "{\"template\":\"daily\"}", 
+    maxRetries: 3, 
+    retryAfterHours: 0.0, 
+    rateLimitGroup: null, 
+    maxPerMinute: null, 
+    autoDedupe: null, 
+    urgencyScore: null,
+    cron: "0 8 * * *"
+);
 ```
 
 ### 🛑 Hard Timeouts
 ```csharp
 // Forcefully kill if running > 5 mins
-await queue.Enqueue("risky-task", "process_data", "{}", 3, 0.0, null, null, null, null, null, null, null, 300, null, null);
+await queue.Enqueue(
+    taskId: "risky-task", 
+    taskType: "process_data", 
+    jsonData: "{}", 
+    maxRetries: 3, 
+    retryAfterHours: 0.0, 
+    rateLimitGroup: null, 
+    maxPerMinute: null, 
+    autoDedupe: null, 
+    urgencyScore: null,
+    maxExecutionSeconds: 300
+);
 ```
 
 ### 🌐 Webhook Callbacks
 ```csharp
 // Execute via HTTP instead of local handlers
-await queue.Enqueue("serverless-task", "resize_image", "{\"img\":\"cat.jpg\"}", 3, 0.0, null, null, null, null, null, null, "https://api.example.com/webhooks/snerdmq", null, null, null);
+await queue.Enqueue(
+    taskId: "serverless-task", 
+    taskType: "resize_image", 
+    jsonData: "{\"img\":\"cat.jpg\"}", 
+    maxRetries: 3, 
+    retryAfterHours: 0.0, 
+    rateLimitGroup: null, 
+    maxPerMinute: null, 
+    autoDedupe: null, 
+    urgencyScore: null,
+    webhookUrl: "https://api.example.com/webhooks/snerdmq"
+);
 ```
 
 *Built with ❤️ for John Wick tier engineering.*
